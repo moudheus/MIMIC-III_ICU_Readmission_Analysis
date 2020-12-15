@@ -125,8 +125,8 @@ def process_partition(eps=1e-6):
         listfile.write('stay,period_length,y_true\n')
         for (x, t, y) in xy_pairs:
             listfile.write("%s,%.6f,%d\n" % (x, t, y))
-    return number_of_patients,number_of_stay,number_of_mortality,number_of_transfer_back,number_of_die_in_ward, number_of_readmit_within_30days,number_of_die_within_30days,number_of_readmission, number_of_not_readmission
+    return number_of_patients, number_of_stay, number_of_mortality, number_of_transfer_back, number_of_die_in_ward, number_of_readmit_within_30days, number_of_die_within_30days, number_of_readmission, number_of_not_readmission
 
 
-number_of_patients,number_of_stay,number_of_mortality,number_of_transfer_back,number_of_die_in_ward, number_of_readmit_within_30days,number_of_die_within_30days,number_of_readmission, number_of_not_readmission=process_partition()
-print(number_of_patients,number_of_stay,number_of_mortality,number_of_transfer_back,number_of_die_in_ward, number_of_readmit_within_30days,number_of_die_within_30days,number_of_readmission, number_of_not_readmission)
+number_of_patients, number_of_stay, number_of_mortality, number_of_transfer_back, number_of_die_in_ward, number_of_readmit_within_30days, number_of_die_within_30days, number_of_readmission, number_of_not_readmission = process_partition()
+print(number_of_patients, number_of_stay, number_of_mortality, number_of_transfer_back, number_of_die_in_ward, number_of_readmit_within_30days, number_of_die_within_30days, number_of_readmission, number_of_not_readmission)

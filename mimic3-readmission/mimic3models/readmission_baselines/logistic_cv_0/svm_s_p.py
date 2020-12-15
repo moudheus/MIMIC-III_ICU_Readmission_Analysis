@@ -28,6 +28,9 @@ from sklearn.naive_bayes import GaussianNB
 
 fig = plt.figure(figsize=(7,7))
 
+data_dir = '/home/ec2-user/SageMaker/MIMIC-III_ICU_Readmission_Analysis/mimic3-readmission/out2'
+list_dir = '/home/ec2-user/SageMaker/MIMIC-III_ICU_Readmission_Analysis/mimic3-readmission/out3'
+
 
 def read_diagnose(subject_path,icustay):
     diagnoses = dataframe_from_csv(os.path.join(subject_path, 'diagnoses.csv'), index_col=None)
@@ -128,14 +131,11 @@ def column_sum(M):
 embeddings, word_indices = get_embeddings(corpus='claims_codes_hs', dim=300)
 
 # Build readers, discretizers, normalizers
-train_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                         listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_train_listfile801010.csv')
+train_reader = ReadmissionReader(dataset_dir=f'{data_dir}/', listfile=f'{list_dir}/0_train_listfile801010.csv')
 
-val_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                       listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_val_listfile801010.csv')
+val_reader = ReadmissionReader(dataset_dir=f'{data_dir}/', listfile=f'{list_dir}/0_val_listfile801010.csv')
 
-test_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                    listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_test_listfile801010.csv')
+test_reader = ReadmissionReader(dataset_dir=f'{data_dir}/', listfile=f'{list_dir}/0_test_listfile801010.csv')
 
 
 discretizer = Discretizer(timestep=float(1.0),
@@ -143,14 +143,14 @@ discretizer = Discretizer(timestep=float(1.0),
                           imput_strategy='previous',
                           start_time='zero')
 
-N=train_reader.get_number_of_examples()
+N = train_reader.get_number_of_examples()
 ret = common_utils.read_chunk(train_reader, N)
 data = ret["X"]
 ts = ret["t"]
 train_y = ret["y"]
 train_names = ret["name"]
-diseases_list=get_diseases(train_names, '/Users/jeffrey0925/MIMIC-III-clean/data/')
-diseases_embedding=disease_embedding(embeddings, word_indices,diseases_list)
+diseases_list = get_diseases(train_names, f'{data_dir}/')
+diseases_embedding = disease_embedding(embeddings, word_indices,diseases_list)
 
 d, discretizer_header, begin_pos, end_pos = discretizer.transform_reg(data[0])
 
@@ -232,7 +232,7 @@ ts_val = ret_val["t"]
 val_y= ret_val["y"]
 val_names = ret_val["name"]
 
-diseases_list_val=get_diseases(val_names, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+diseases_list_val=get_diseases(val_names, f'{data_dir}/')
 diseases_embedding_val=disease_embedding(embeddings, word_indices,diseases_list_val)
 
 
@@ -264,7 +264,7 @@ ts_test = ret_test["t"]
 test_y= ret_test["y"]
 test_names = ret_test["name"]
 
-diseases_list_test = get_diseases(test_names, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+diseases_list_test = get_diseases(test_names, f'{data_dir}/')
 diseases_embedding_test=disease_embedding(embeddings, word_indices,diseases_list_test)
 
 #----------
@@ -454,6 +454,6 @@ plt.legend(loc="lower right")
 
 
 
-fig.savefig('/Users/jeffrey0925/Downloads/mimic3-benchmarks-master/mimic3models/readmission3/logistic_cv_0/ROC0.png')
+fig.savefig('ROC0.png')
 
 plt.show()

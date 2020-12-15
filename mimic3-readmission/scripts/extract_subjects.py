@@ -43,6 +43,10 @@ transfers = merge_on_subject(transfers, patients)
 stays = merge_on_subject_admission(stays, admits)
 stays = merge_on_subject(stays, patients)
 
+#mvo
+#transfers.to_pickle('transfers.pkl')
+#endmvo
+
 transfers = add_age_to_icustays(transfers)
 transfers = add_inunit_mortality_to_icustays(transfers)
 transfers = add_inhospital_mortality_to_icustays(transfers)
@@ -104,5 +108,6 @@ items_to_keep = set(
     [int(itemid) for itemid in dataframe_from_csv(args.itemids_file)['ITEMID'].unique()]) if args.itemids_file else None
 
 for table in args.event_tables:
-    read_events_table_and_break_up_by_subject(args.mimic3_path, table, args.output_path, items_to_keep=items_to_keep,
+    read_events_table_and_break_up_by_subject(args.mimic3_path, table, args.output_path, 
+                                              items_to_keep=items_to_keep,
                                               subjects_to_keep=subjects, verbose=args.verbose)

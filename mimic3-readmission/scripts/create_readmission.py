@@ -111,12 +111,12 @@ for subject_dir in os.listdir(args.subjects_root_path):
         sys.stdout.write('reading...')
         sys.stdout.flush()
         stays = read_stays(os.path.join(args.subjects_root_path, subject_dir))
-    except:
-        sys.stdout.write('error reading from disk!\n')
+    except Exception as e:
+        sys.stdout.write(e)
+        sys.stdout.write('\n')
         continue
     else:
-        sys.stdout.write(
-            'got {0} stays...'.format(stays.shape[0]))
+        sys.stdout.write('got {0} stays...'.format(stays.shape[0]))
         sys.stdout.flush()
 
     stays = add_inhospital_mortality_to_icustays(stays)
@@ -160,7 +160,7 @@ for subject_dir in os.listdir(args.subjects_root_path):
     # ----------------
     stays['READMISSION'] = ((stays.TRANSFERBACK==1) | (stays.DIEINWARD==1) | (stays.LESS_TAHN_30DAYS==1) | (stays.DIE_LESS_TAHN_30DAYS==1)).astype(int)
 
-    stays.ix[(stays.MORTALITY == 1) & (stays.MORTALITY_INHOSPITAL == 1) & (stays.MORTALITY_INUNIT == 1), 'READMISSION'] = 2
+    stays.loc[(stays.MORTALITY == 1) & (stays.MORTALITY_INHOSPITAL == 1) & (stays.MORTALITY_INUNIT == 1), 'READMISSION'] = 2
     stays.to_csv(os.path.join(args.subjects_root_path, subject_dir, 'stays_readmission.csv'), index=False)
 
     sys.stdout.write(' DONE!\n')

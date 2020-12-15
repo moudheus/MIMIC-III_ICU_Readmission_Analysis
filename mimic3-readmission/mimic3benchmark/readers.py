@@ -170,8 +170,13 @@ class ReadmissionReader(Reader):
         with open(os.path.join(self._dataset_dir, ts_filename), "r") as tsfile:
             header = tsfile.readline().strip().split(',')
             assert header[0] == "Hours"
+            #print(ts_filename, len(header))
             for line in tsfile:
                 mas = line.strip().split(',')
+                if len(mas) != len(header):
+                    print(line, end='')
+                    print('Unexpected number of values in csv, skipping\n')
+                    continue
                 ret.append(np.array(mas))
         return (np.stack(ret), header)
 

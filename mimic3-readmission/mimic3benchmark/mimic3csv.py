@@ -6,6 +6,9 @@ import sys
 
 from mimic3benchmark.util import *
 
+def dataframe_from_csv(path, header=0, index_col=0):
+    return pd.read_csv(path + '.gz', header=header, index_col=index_col)
+
 def read_patients_table(mimic3_path):
     pats = dataframe_from_csv(os.path.join(mimic3_path, 'PATIENTS.csv'))
     pats = pats[['SUBJECT_ID', 'GENDER', 'DOB', 'DOD']]
@@ -37,7 +40,7 @@ def read_transfers_table(mimic3_path):
     transfersisnull = transfers.loc[transfers.ICUSTAY_ID.isnull()]
 
 
-    transfersnotnull=transfersnotnull.drop_duplicates('ICUSTAY_ID',keep='last')
+    transfersnotnull=transfersnotnull.drop_duplicates('ICUSTAY_ID', keep='last')
     #print(transfersnotnull)
     transfers=pd.concat([transfersnotnull, transfersisnull])
     return transfers
@@ -75,7 +78,7 @@ def read_prescriptions_table(mimic3_path):
     prescriptions=prescriptions[['SUBJECT_ID','HADM_ID','ICUSTAY_ID','NDC','DOSE_VAL_RX', 'DOSE_UNIT_RX','STARTDATE','ENDDATE']]
 
     #exclude = ['GSN']
-    #prescriptions=prescriptions.ix[:, prescriptions.columns.difference(exclude)].hist()
+    #prescriptions=prescriptions.loc[:, prescriptions.columns.difference(exclude)].hist()
     #print (prescriptions)
     return prescriptions
 
@@ -83,10 +86,13 @@ def merge_on_subject_admission_icustay(table1, table2):
     return table1.merge(table2, how='inner', left_on=['SUBJECT_ID', 'HADM_ID', 'ICUSTAY_ID'], right_on=['SUBJECT_ID', 'HADM_ID', 'ICUSTAY_ID'])
 
 #=======================================
+
+import gzip
+
 def read_events_table_by_row(mimic3_path, table):
     nb_rows = { 'chartevents': 330712484, 'labevents': 27854056, 'outputevents': 4349219, 'inputevents_cv':17527936, 'inputevents_mv':3618992}
-    reader = csv.DictReader(open(os.path.join(mimic3_path, table.upper() + '.csv'), 'r'))
-    for i,row in enumerate(reader):
+    reader = csv.DictReader(gzip.open(os.path.join(mimic3_path, table.upper() + '.csv.gz'), 'rt'))
+    for i, row in enumerate(reader):
         if 'ICUSTAY_ID' not in row:
             row['ICUSTAY_ID'] = ''
         yield row, i, nb_rows[table.lower()]
@@ -96,7 +102,7 @@ def count_icd_codes(diagnoses, output_path=None):
     counts=diagnoses[['ICD9_CODE','HADM_ID']].drop_duplicates()
     codes['COUNT'] = counts.groupby('ICD9_CODE')['HADM_ID'].count()
     codes.COUNT = codes.COUNT.fillna(0).astype(int)
-    codes = codes.ix[codes.COUNT>0]
+    codes = codes.loc[codes.COUNT > 0]
     if output_path:
         codes.to_csv(output_path, index_label='ICD9_CODE')
     return codes.sort_values('COUNT', ascending=False).reset_index()
@@ -107,9 +113,18 @@ def merge_on_subject(table1, table2):
 def merge_on_subject_admission(table1, table2):
     return table1.merge(table2, how='inner', left_on=['SUBJECT_ID', 'HADM_ID'], right_on=['SUBJECT_ID', 'HADM_ID'])
 
-def add_age_to_icustays(stays):
+def add_age_to_icustays_ref(stays):
     stays['AGE'] = (stays.INTIME - stays.DOB).apply(lambda s: s / np.timedelta64(1, 's')) / 60./60/24/365
-    stays.ix[stays.AGE<0,'AGE'] = 90
+    stays.loc[stays.AGE < 0, 'AGE'] = 90
+    return stays
+
+def to_ord(dt):
+    return dt.toordinal()
+
+def add_age_to_icustays(stays):
+    stays['AGE'] = (stays.INTIME.fillna(pd.Timestamp(0)).apply(to_ord) - stays.DOB.apply(to_ord)) / 365
+    stays.loc[stays.AGE < 0, 'AGE'] = 90
+    stays.loc[stays.AGE > 120, 'AGE'] = 120
     return stays
 
 def add_inhospital_mortality_to_icustays(stays):
@@ -127,7 +142,7 @@ def add_inunit_mortality_to_icustays(stays):
     return stays
 
 def filter_icustays_on_age(stays, min_age=18, max_age=np.inf):
-    stays = stays.ix[(stays.AGE>=min_age)&(stays.AGE<=max_age)]
+    stays = stays.loc[(stays.AGE >= min_age)&(stays.AGE <= max_age)]
     return stays
 
 def filter_diagnoses_on_stays(diagnoses, stays):
@@ -146,7 +161,7 @@ def break_up_stays_by_subject(stays, output_path, subjects=None, verbose=1):
         except:
             pass
 
-        stays.ix[stays.SUBJECT_ID == subject_id].sort_values(by='INTIME').to_csv(os.path.join(dn, 'stays.csv'), index=False)
+        stays.loc[stays.SUBJECT_ID == subject_id].sort_values(by='INTIME').to_csv(os.path.join(dn, 'stays.csv'), index=False)
 
     if verbose:
         sys.stdout.write('DONE!\n')
@@ -163,7 +178,7 @@ def break_up_transfers_by_subject(transfers, output_path, subjects=None, verbose
         except:
             pass
 
-        transfers.ix[transfers.SUBJECT_ID == subject_id].sort_values(by='INTIME').to_csv(os.path.join(dn, 'transfers.csv'), index=False)
+        transfers.loc[transfers.SUBJECT_ID == subject_id].sort_values(by='INTIME').to_csv(os.path.join(dn, 'transfers.csv'), index=False)
     if verbose:
         sys.stdout.write('DONE!\n')
 
@@ -179,7 +194,7 @@ def break_up_diagnoses_by_subject(diagnoses, output_path, subjects=None, verbose
         except:
             pass
 
-        diagnoses.ix[diagnoses.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID','SEQ_NUM']).to_csv(os.path.join(dn, 'diagnoses.csv'), index=False)
+        diagnoses.loc[diagnoses.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID','SEQ_NUM']).to_csv(os.path.join(dn, 'diagnoses.csv'), index=False)
     if verbose:
         sys.stdout.write('DONE!\n')
 
@@ -195,7 +210,7 @@ def break_up_procedures_by_subject(procedures, output_path, subjects=None, verbo
         except:
             pass
 
-        procedures.ix[procedures.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID', 'SEQ_NUM']).to_csv(os.path.join(dn, 'procedures.csv'), index=False)
+        procedures.loc[procedures.SUBJECT_ID == subject_id].sort_values(by=['ICUSTAY_ID', 'SEQ_NUM']).to_csv(os.path.join(dn, 'procedures.csv'), index=False)
     if verbose:
         sys.stdout.write('DONE!\n')
 
@@ -214,7 +229,7 @@ def break_up_prescriptions_by_subject(prescriptions, output_path, subjects=None,
         except:
             pass
 
-        prescriptions.ix[prescriptions.SUBJECT_ID == subject_id].sort_values(by='STARTDATE').to_csv(os.path.join(dn, 'prescriptions.csv'), index=False)
+        prescriptions.loc[prescriptions.SUBJECT_ID == subject_id].sort_values(by='STARTDATE').to_csv(os.path.join(dn, 'prescriptions.csv'), index=False)
 
     if verbose:
         sys.stdout.write('DONE!\n')
@@ -257,6 +272,7 @@ def read_events_table_and_break_up_by_subject(mimic3_path, table, output_path, i
         w.writerows(data_stats.curr_obs)
         data_stats.curr_obs = []
     
+    print(mimic3_path, table)
     for row, row_no, nb_rows in read_events_table_by_row(mimic3_path, table):
         if verbose and (row_no % 100000 == 0):
             if data_stats.last_write_no != '':

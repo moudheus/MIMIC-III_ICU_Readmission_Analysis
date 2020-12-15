@@ -40,8 +40,9 @@ for subject_dir in os.listdir(args.subjects_root_path):
         diagnoses = read_diagnoses(os.path.join(args.subjects_root_path, subject_dir))
         events = read_events(os.path.join(args.subjects_root_path, subject_dir))
 
-    except:
-        sys.stdout.write('error reading from disk!\n')
+    except Exception as e:
+        sys.stdout.write(e)
+        sys.stdout.write('\n')
         continue
     else:
         sys.stdout.write('got {0} stays, {1} diagnoses, {2} events...'.format(stays.shape[0], diagnoses.shape[0], events.shape[0]))
@@ -78,11 +79,12 @@ for subject_dir in os.listdir(args.subjects_root_path):
 
         episode = add_hours_elpased_to_events(episode, intime).set_index('HOURS').sort_index(axis=0)
         #print(episode)
-        episodic_data.Weight.ix[stay_id] = get_first_valid_from_timeseries(episode, 'Weight')
-        episodic_data.Height.ix[stay_id] = get_first_valid_from_timeseries(episode, 'Height')
-        episodic_data.ix[episodic_data.index==stay_id].to_csv(os.path.join(args.subjects_root_path, subject_dir, 'episode{}_readmission.csv'.format(i+1)), index_label='Icustay')
+        episodic_data.Weight.loc[stay_id] = get_first_valid_from_timeseries(episode, 'Weight')
+        episodic_data.Height.loc[stay_id] = get_first_valid_from_timeseries(episode, 'Height')
+        episodic_data.loc[episodic_data.index==stay_id].to_csv(os.path.join(args.subjects_root_path, subject_dir, 'episode{}_readmission.csv'.format(i+1)), index_label='Icustay')
         columns = list(episode.columns)
         columns_sorted = sorted(columns, key=(lambda x: "" if x == "Hours" else x))
         episode = episode[columns_sorted]
         episode.to_csv(os.path.join(args.subjects_root_path, subject_dir, 'episode{}_timeseries_readmission.csv'.format(i+1)), index_label='Hours')
+        
     sys.stdout.write(' DONE!\n')
