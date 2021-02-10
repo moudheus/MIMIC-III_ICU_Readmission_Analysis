@@ -22,6 +22,9 @@ from utilities.data_loader import get_embeddings
 import statistics
 
 
+HOME = '/home/ec2-user/SageMaker/mimic3-readmission/mimic3-readmission'
+
+
 g_map = { 'F': 1, 'M': 2 }
 
 e_map = { 'ASIAN': 1,
@@ -43,7 +46,7 @@ i_map={'Government': 0,
 
 def read_diagnose(subject_path,icustay):
     diagnoses = dataframe_from_csv(os.path.join(subject_path, 'diagnoses.csv'), index_col=None)
-    diagnoses=diagnoses.ix[(diagnoses.ICUSTAY_ID==int(icustay))]
+    diagnoses=diagnoses.loc[(diagnoses.ICUSTAY_ID==int(icustay))]
     diagnoses=diagnoses['ICD9_CODE'].values.tolist()
 
     return diagnoses
@@ -74,7 +77,7 @@ def read_demographic(subject_path,icustay,episode):
     demographic_re[enhnicity_strat+int(demographic['Ethnicity'].iloc[0])]=1
     insurance =dataframe_from_csv(os.path.join(subject_path, 'stays_readmission.csv'), index_col=None)
 
-    insurance=insurance.ix[(insurance.ICUSTAY_ID==int(icustay))]
+    insurance=insurance.loc[(insurance.ICUSTAY_ID==int(icustay))]
 
     demographic_re[insurance_strat+i_map[insurance['INSURANCE'].iloc[0]]]=1
 
@@ -131,11 +134,12 @@ target_repl = (args.target_repl_coef > 0.0 and args.mode == 'train')
 #Read embedding
 embeddings, word_indices = get_embeddings(corpus='claims_codes_hs', dim=300)
 
-train_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                         listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_train_listfile801010.csv')
 
-val_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                       listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_val_listfile801010.csv')
+train_reader = ReadmissionReader(dataset_dir=f'{HOME}/data2/',
+                                         listfile=f'{HOME}/data3/0_train_listfile801010.csv')
+
+val_reader = ReadmissionReader(dataset_dir=f'{HOME}/data2/',
+                                       listfile=f'{HOME}/data3/0_val_listfile801010.csv')
 
 
 discretizer = Discretizer(timestep=float(args.timestep),
@@ -149,9 +153,9 @@ data = ret["X"]
 ts = ret["t"]
 labels = ret["y"]
 names = ret["name"]
-diseases_list=get_diseases(names, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+diseases_list=get_diseases(names, f'{HOME}/data1/')
 diseases_embedding=disease_embedding(embeddings, word_indices,diseases_list)
-demographic=get_demographic(names, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+demographic=get_demographic(names, f'{HOME}/data1/')
 
 age_means=sum(demographic[:][0])
 age_std=statistics.stdev(demographic[:][0])
@@ -227,9 +231,9 @@ N1=val_reader.get_number_of_examples()
 ret1 = common_utils.read_chunk(val_reader, N1)
 
 names1 = ret1["name"]
-diseases_list1=get_diseases(names1, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+diseases_list1=get_diseases(names1, f'{HOME}/data2/')
 diseases_embedding1=disease_embedding(embeddings, word_indices,diseases_list1)
-demographic1=get_demographic(names1, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+demographic1=get_demographic(names1, f'{HOME}/data2/')
 demographic1=age_normalize(demographic1, age_means, age_std)
 
 
@@ -289,16 +293,16 @@ elif args.mode == 'test':
     del train_raw
     del val_raw
 
-    test_reader = ReadmissionReader(dataset_dir='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/data/',
-                                            listfile='/Users/jeffrey0925/MIMIC-III-clean/readmission_cv2/0_test_listfile801010.csv')
+    test_reader = ReadmissionReader(dataset_dir=f'{HOME}/data2/',
+                                            listfile=f'{HOME}/data3/0_test_listfile801010.csv')
 
     N = test_reader.get_number_of_examples()
     re = common_utils.read_chunk(test_reader, N)
 
     names_t = re["name"]
-    diseases_list_t = get_diseases(names_t, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+    diseases_list_t = get_diseases(names_t, f'{HOME}/data2/')
     diseases_embedding_t = disease_embedding(embeddings, word_indices, diseases_list_t)
-    demographic_t = get_demographic(names_t, '/Users/jeffrey0925/MIMIC-III-clean/data/')
+    demographic_t = get_demographic(names_t, f'{HOME}/data2/')
     demographic_t = age_normalize(demographic_t, age_means, age_std)
 
     ret = utils.load_data(test_reader, discretizer, normalizer, diseases_embedding_t, demographic_t,args.small_part,

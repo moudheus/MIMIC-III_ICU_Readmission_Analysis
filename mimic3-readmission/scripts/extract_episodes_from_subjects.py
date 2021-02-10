@@ -54,7 +54,7 @@ for subject_dir in os.listdir(args.subjects_root_path):
     sys.stdout.flush()
     #print (var_map)
     events = map_itemids_to_variables(events, var_map)
-    print('events!!!!!!: ',events.VARIABLE.unique())
+    #print('events!!!!!!: ', events.VARIABLE.unique())
     events = clean_events(events)
     if events.shape[0] == 0:
         sys.stdout.write('no valid events!\n')

@@ -76,7 +76,7 @@ def process_partition(eps=1e-6):
                 #mortality = int(label_df.iloc[0]["Mortality"])
                 readmission= int(label_df.iloc[0]["Readmission"])
                 if(readmission==2):
-                    print("\n\t(die in ICU)", patient, ts_filename)
+                    #print("\n\t(die in ICU)", patient, ts_filename)
                     continue
                 elif(readmission==1):
                     number_of_readmission+=1
